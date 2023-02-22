@@ -33,3 +33,7 @@
 ## Autor
 
 - Koláček Daniel - [github](https://github.com/Salares)
+
+## Zdroje
+
+[Textury](http://texturelib.com/)
