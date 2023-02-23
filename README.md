@@ -8,7 +8,7 @@
   - Uzavření smyčky
 
   ![Loop_img](Changelogs/0.1/Images/2.jpg)
-  - Automatické umístění kontrolních bodů
+  - Automatické umístění ovládacích bodů
 
   ![Autoplace_img](Changelogs/0.1/Images/3.jpg)
   - Sampling rovnoměrně rozložených bodů na křivce
