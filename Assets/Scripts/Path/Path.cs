@@ -22,16 +22,18 @@ using UnityEngine;
 
     public Path(Vector2 centre, int index, int numberOfPaths)
     {
+        Vector2 startPoint = CalculatePointOnCircle(centre, index, numberOfPaths, 0.2f);
+        Vector2 startPointControl = CalculatePointOnCircle(centre, index, numberOfPaths, 0.4f);
         Vector2 endPoint = CalculatePointOnCircle(centre, index, numberOfPaths);
         Vector2 endPointControl = CalculatePointOnCircle(centre, index, numberOfPaths, 0.8f);
         points = new List<Vector2>
         {
-            centre, 
-            centre,
+            startPoint, 
+            startPointControl,
             endPointControl,
             endPoint
         };
-        Debug.Log("Created path at " + centre + " to " + endPoint);
+        Debug.Log("Created path at " + startPoint + " to " + endPoint);
     }
 
     private Vector2 CalculatePointOnCircle(Vector2 centre, int index, int numberOfPaths, float radius = 1f)

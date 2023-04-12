@@ -39,10 +39,11 @@ using System;
 
     private void Draw()
     {
-        Handles.color = creator.splineParameters.handlesColor;
+        
 
         foreach (Path path in Crossroad)
         {
+            Handles.color = creator.splineParameters.handlesColor;
             for (int i = 0; i < path.NumSegments; i++)
             {
                 Vector2[] points = path.GetPointsInSegment(i);
