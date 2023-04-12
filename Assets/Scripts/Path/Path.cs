@@ -17,6 +17,31 @@ using UnityEngine;
             centre + (Vector2.right + Vector2.down),
             centre + Vector2.right
         };
+        Debug.Log("Created path at " + centre);
+    }
+
+    public Path(Vector2 centre, int index, int numberOfPaths)
+    {
+        Vector2 endPoint = CalculatePointOnCircle(centre, index, numberOfPaths);
+        Vector2 endPointControl = CalculatePointOnCircle(centre, index, numberOfPaths, 0.8f);
+        points = new List<Vector2>
+        {
+            centre, 
+            centre,
+            endPointControl,
+            endPoint
+        };
+        Debug.Log("Created path at " + centre + " to " + endPoint);
+    }
+
+    private Vector2 CalculatePointOnCircle(Vector2 centre, int index, int numberOfPaths, float radius = 1f)
+    {
+        float angle = index * 360f / numberOfPaths;
+
+        float x = centre.x + radius * Mathf.Cos(angle * Mathf.Deg2Rad);
+        float y = centre.y + radius * Mathf.Sin(angle * Mathf.Deg2Rad);
+
+        return new Vector2(x,y);
     }
 
     public Vector2 this[int i]
