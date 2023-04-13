@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
@@ -12,12 +13,16 @@ public class CrossroadPlacer : MonoBehaviour
 
     [Range(1f, 1000f)] public float tiling = 1;
 
+    private List<Vector2> crossroadVertices;
+
     public Material roadMaterial;
 
     public void UpdateCrossroad()
     {
         Crossroad crossroad = GetComponent<CrossroadCreator>().crossroad;
         List<Vector2[]> list = new List<Vector2[]>();
+
+        crossroadVertices = new List<Vector2>();
 
         for (int j = transform.childCount - 1; j >= 0; j--)
         {
@@ -28,6 +33,7 @@ public class CrossroadPlacer : MonoBehaviour
         foreach (Path path in crossroad) 
         {
             Vector2[] points = path.CalculateEvenlySpacedPoints(spacing);
+            Debug.DrawLine(points[0],points[1], Color.blue, 10f);
 
             GameObject meshObject = new GameObject("Road " + i);
 
@@ -44,7 +50,49 @@ public class CrossroadPlacer : MonoBehaviour
 
             i+=1;
         }
+
+        GameObject crossroadObject = new GameObject("Crossroad");
+        crossroadObject.transform.SetParent(this.transform);
+        MeshFilter crossroadMeshFilter = crossroadObject.AddComponent<MeshFilter>();
+        MeshRenderer crossroadMeshRenderer = crossroadObject.AddComponent<MeshRenderer>();
+        crossroadMeshFilter.mesh = CreateCrossroadMesh();
     }
+
+    private Mesh CreateCrossroadMesh()
+    {
+        Vector3[] vertices = ConvertToVector3(crossroadVertices.ToArray());
+        int[] triangles = new int[(vertices.Length - 2) * 3];
+
+        Mesh mesh = new Mesh();
+
+        // Generate triangles
+        int triangleIndex = 0;
+        for (int i = 1; i < vertices.Length - 1; i++)
+        {
+            triangles[triangleIndex] = 0;
+            triangles[triangleIndex + 1] = i;
+            triangles[triangleIndex + 2] = i + 1;
+            triangleIndex += 3;
+        }
+
+        // Set the vertices and triangles to the mesh
+        mesh.vertices = vertices;
+        mesh.triangles = triangles;
+
+        return mesh;
+    }
+
+    public Vector3[] ConvertToVector3(Vector2[] vertices)
+{
+    Vector3[] vertices3D = new Vector3[vertices.Length];
+
+    for (int i = 0; i < vertices.Length; i++)
+    {
+        vertices3D[i] = new Vector3(vertices[i].x, vertices[i].y, 0f);
+    }
+
+    return vertices3D;
+}
 
     Mesh CreateRoadMesh(Vector2[] points, bool isClosed)
     {
@@ -96,6 +144,9 @@ public class CrossroadPlacer : MonoBehaviour
             triangleIndex += 6;
         }
         Mesh mesh = new Mesh();
+        Debug.DrawLine(vertices[0],vertices[1], Color.magenta, 10f);
+        crossroadVertices.Add(vertices[0]);
+        crossroadVertices.Add(vertices[1]);
         mesh.vertices = vertices;
         mesh.uv = uvs;
         mesh.triangles = triangles;

@@ -4,7 +4,6 @@ using UnityEngine;
 
 [System.Serializable] public class Crossroad : IEnumerable<Path>
 {
-    [SerializeField]
     private List<Path> pathList;
 
     public Crossroad(Vector2 centre, int numberOfPaths, float startPointOffset, float endPointOffset, float controlPointOffset)
@@ -12,7 +11,10 @@ using UnityEngine;
         pathList = new List<Path>();
         for (int i = 0; i < numberOfPaths; i++)
         {
-            pathList.Add(new Path(centre, i, numberOfPaths, startPointOffset,  endPointOffset,  controlPointOffset));
+            Path path = new Path(centre, i, numberOfPaths, startPointOffset,  endPointOffset,  controlPointOffset);
+            
+
+            pathList.Add(path);
         }
     }
 
