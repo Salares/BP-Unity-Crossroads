@@ -20,12 +20,12 @@ using UnityEngine;
         Debug.Log("Created path at " + centre);
     }
 
-    public Path(Vector2 centre, int index, int numberOfPaths)
+    public Path(Vector2 centre, int index, int numberOfPaths, float startPointOffset, float endPointOffset, float controlPointOffset)
     {
-        Vector2 startPoint = CalculatePointOnCircle(centre, index, numberOfPaths, 0.2f);
-        Vector2 startPointControl = CalculatePointOnCircle(centre, index, numberOfPaths, 0.4f);
-        Vector2 endPoint = CalculatePointOnCircle(centre, index, numberOfPaths);
-        Vector2 endPointControl = CalculatePointOnCircle(centre, index, numberOfPaths, 0.8f);
+        Vector2 startPoint = CalculatePointOnCircle(centre, index, numberOfPaths, startPointOffset);
+        Vector2 startPointControl = CalculatePointOnCircle(centre, index, numberOfPaths, startPointOffset + controlPointOffset);
+        Vector2 endPoint = CalculatePointOnCircle(centre, index, numberOfPaths, endPointOffset);
+        Vector2 endPointControl = CalculatePointOnCircle(centre, index, numberOfPaths, endPointOffset - controlPointOffset);
         points = new List<Vector2>
         {
             startPoint, 

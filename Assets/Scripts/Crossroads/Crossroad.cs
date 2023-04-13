@@ -7,12 +7,12 @@ using UnityEngine;
     [SerializeField]
     private List<Path> pathList;
 
-    public Crossroad(Vector2 centre, int numberOfPaths)
+    public Crossroad(Vector2 centre, int numberOfPaths, float startPointOffset, float endPointOffset, float controlPointOffset)
     {
         pathList = new List<Path>();
         for (int i = 0; i < numberOfPaths; i++)
         {
-            pathList.Add(new Path(centre, i, numberOfPaths));
+            pathList.Add(new Path(centre, i, numberOfPaths, startPointOffset,  endPointOffset,  controlPointOffset));
         }
     }
 

@@ -6,12 +6,11 @@ using UnityEngine;
 [RequireComponent(typeof(CrossroadCreator))] 
 public class CrossroadPlacer : MonoBehaviour
 {
-    public float roadWidth = 1f;
-    [Range(.05f, 2.5f)] public float spacing = 1f;
-    
-    public bool autoUpdate = false;
+    [Header("Crossroad Mesh Options")]
+    [Range(0.05f, 3f)]public float roadWidth = 1f;
+    [Range(.005f, 0.5f)] public float spacing = 1f;
 
-    public float tiling = 1;
+    [Range(1f, 1000f)] public float tiling = 1;
 
     public Material roadMaterial;
 
@@ -96,8 +95,6 @@ public class CrossroadPlacer : MonoBehaviour
             vertexIndex += 2;
             triangleIndex += 6;
         }
-
-        Debug.Log(triangles);
         Mesh mesh = new Mesh();
         mesh.vertices = vertices;
         mesh.uv = uvs;

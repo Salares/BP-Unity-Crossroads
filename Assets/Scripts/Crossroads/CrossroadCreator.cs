@@ -22,13 +22,18 @@ public class CrossroadCreator : MonoBehaviour
 
     [HideInInspector] public Crossroad crossroad;
 
-    [Header("Crossroads Options")]
-    [Range(2, 16)]
-    public int numberOfPaths = 2;
+    [Header("Crossroad Options")]
+    [Range(2, 16)]public int numberOfPaths = 2;
+
+    [Header("Road positioning")]
+    [Range(0f, 2f)] public float startPointOffset = 0.2f;
+    [Range(2f, 10f)] public float endPointOffset = 1f;
+    [Range(0.05f, 1f)] public float controlPointOffset = 0.05f;
+
 
     public void CreateCrossroad()
     {
-        crossroad = new Crossroad(transform.position, numberOfPaths);
+        crossroad = new Crossroad(transform.position, numberOfPaths, startPointOffset, endPointOffset, controlPointOffset);
     }
 
     void Start()
