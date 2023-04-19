@@ -13,16 +13,19 @@ public class CrossroadPlacer : MonoBehaviour
 
     [Range(1f, 1000f)] public float tiling = 1;
 
-    private List<Vector2> crossroadVertices;
+    private List<Vector2> crossroadVerticesV2;
+    private List<Vector2> guideVerticesV2;
 
     public Material roadMaterial;
+    public Material crossroadMaterial;
 
     public void UpdateCrossroad()
     {
         Crossroad crossroad = GetComponent<CrossroadCreator>().crossroad;
         List<Vector2[]> list = new List<Vector2[]>();
 
-        crossroadVertices = new List<Vector2>();
+        crossroadVerticesV2 = new List<Vector2>();
+        guideVerticesV2 = new List<Vector2>();
 
         for (int j = transform.childCount - 1; j >= 0; j--)
         {
@@ -56,23 +59,64 @@ public class CrossroadPlacer : MonoBehaviour
         MeshFilter crossroadMeshFilter = crossroadObject.AddComponent<MeshFilter>();
         MeshRenderer crossroadMeshRenderer = crossroadObject.AddComponent<MeshRenderer>();
         crossroadMeshFilter.mesh = CreateCrossroadMesh();
+        crossroadMeshRenderer.sharedMaterial = crossroadMaterial;
     }
 
     private Mesh CreateCrossroadMesh()
     {
-        Vector3[] verticesNoCenter = ConvertToVector3(crossroadVertices.ToArray());
-        Vector3[] vertices = new Vector3[1 + verticesNoCenter.Length];
-        vertices[0] = this.transform.position;
-        verticesNoCenter.CopyTo(vertices, 1);
+        Vector3[] verticesNoCenter = ConvertToVector3(crossroadVerticesV2.ToArray());
+        Vector3[] guideVertices = ConvertToVector3(guideVerticesV2.ToArray());
 
-        //vert 9
-        //tri 8 * 3
+        Vector3 center = this.transform.position;
 
+        int vertLength = verticesNoCenter.Length;
+        int guideLength = guideVertices.Length;
+
+        List<Vector3[]> splineList = new List<Vector3[]>();
+        
+        for (int i = 1 ; i < verticesNoCenter.Length ; i+=2) 
+        {
+            Vector3 a = verticesNoCenter[i];
+            Vector3 b = guideVertices[i];
+            Vector3 c = verticesNoCenter[(i+1)%vertLength];
+            Vector3 d = guideVertices[(i+1)%guideLength];
+
+            Vector3 intersectionPoint = CrossroadTools.CalculateIntersection(b,a,d,c);
+
+            List<Vector3> pointsList = new List<Vector3>
+            {
+                a,
+                intersectionPoint,
+                c
+            };
+
+            Vector3[] points = pointsList.ToArray();
+            Vector3[] spline = CalculateIntersectionSplines(points, 0.1f);
+
+            splineList.Add(spline);
+        }
+
+        List<Vector3> verticesList = new List<Vector3>();
+        verticesList.Add(center);
+
+        foreach (Vector3[] spline in splineList)
+        {
+            foreach (Vector3 point in spline)
+            {
+                verticesList.Add(point);
+            }    
+        }
+
+        Vector3[] vertices = verticesList.ToArray();
+        Vector2[] uvs = new Vector2[vertices.Length];
         int[] triangles = new int[(vertices.Length - 1) * 3];
 
-        Mesh mesh = new Mesh();
-
-        // Generate triangles
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            Vector2 coordinate = new Vector2(Vector3.Distance(vertices[i], center), AngleBetweenVectors(vertices[i],Vector3.up)/360f);
+            uvs[i] = coordinate;
+            Debug.Log(coordinate);
+        }
         int triangleIndex = 0;
         for (int i = 1; i < vertices.Length - 1; i++)
         {
@@ -80,47 +124,104 @@ public class CrossroadPlacer : MonoBehaviour
             triangles[triangleIndex + 1] = 0;
             triangles[triangleIndex + 2] = i + 1;
             triangleIndex += 3;
-            
         }
 
         triangles[triangleIndex] = vertices.Length - 1;
         triangles[triangleIndex + 1] = 0;
         triangles[triangleIndex + 2] = 1;
 
-        Debug.Log(triangles.Length);
-        Debug.Log(vertices.Length);
-
-        // triangles[triangleIndex] = vertices.Length;
-        // triangles[triangleIndex + 1] = 0;
-        // triangles[triangleIndex + 2] = 1;
-
-        // Debug.DrawLine(vertices[0],vertices[1], Color.cyan, 10f);
-        // Debug.DrawLine(vertices[1],vertices[2], Color.magenta, 10f);
-        // Debug.DrawLine(vertices[2],vertices[3], Color.yellow, 10f);
-        // Debug.DrawLine(vertices[3],vertices[4], Color.black, 10f);
-        // Debug.DrawLine(vertices[4],vertices[5], Color.red, 10f);
-        // Debug.DrawLine(vertices[5],vertices[6], Color.green, 10f);
-        // Debug.DrawLine(vertices[6],vertices[7], Color.blue, 10f);
-        // Debug.DrawLine(vertices[7],vertices[0], Color.white, 10f);
+        Mesh mesh = new Mesh();
 
         // Set the vertices and triangles to the mesh
         mesh.vertices = vertices;
         mesh.triangles = triangles;
+        mesh.uv = uvs;
 
         return mesh;
     }
 
-    public Vector3[] ConvertToVector3(Vector2[] vertices)
-{
-    Vector3[] vertices3D = new Vector3[vertices.Length];
-
-    for (int i = 0; i < vertices.Length; i++)
+    public Vector2[] NormalizeVector2Array(Vector2[] vectorArray)
     {
-        vertices3D[i] = new Vector3(vertices[i].x, vertices[i].y, 0f);
+        for (int i = 0; i < vectorArray.Length; i++)
+        {
+            vectorArray[i] = vectorArray[i].normalized;
+        }
+
+        return vectorArray;
     }
 
-    return vertices3D;
-}
+    private float AngleBetweenVectors(Vector3 a, Vector3 b)
+    {
+        return Mathf.Acos(Vector3.Dot(a.normalized, b.normalized)) * Mathf.Rad2Deg;
+    }
+
+    private Vector2[] CalculateUVs(Vector3[] vertices, Vector3 center)
+    {
+        Vector2[] uvs = new Vector2[vertices.Length];
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            Vector3 vertexDirection = vertices[i] - center;
+            float angle = AngleBetweenVectors(vertexDirection, Vector3.right);
+            uvs[i] = new Vector2(angle / 360f, 0f);
+        }
+
+        return uvs;
+    }
+
+    public Vector3[] CalculateIntersectionSplines(Vector3[] points, float spacing, float resolution = 1)
+    {
+        List<Vector3> evenlySpacedPoints = new List<Vector3>();
+        evenlySpacedPoints.Add(points[0]);
+        Vector3 previousPoint = points[0];
+        float distanceSinceLastEvenPoint = 0;
+       
+        float controlNetLength = 
+            Vector3.Distance(points[0],points[1]) + 
+            Vector3.Distance(points[1],points[2]);
+
+        float estimatedCurveLength =  Vector3.Distance(points[0],points[2]) + controlNetLength / 2;
+        int divisions = Mathf.CeilToInt(estimatedCurveLength * resolution * 10);
+        float interval = 1f/divisions;
+
+        float time = 0;
+        while(time <= 1)
+        {
+            time += interval;
+            Vector3 pointOnCurve = Bezier.EvaluateQuadratic(points[0],points[1],points[2], time);
+            
+            while(distanceSinceLastEvenPoint >= spacing)
+            {
+                float exceedence = distanceSinceLastEvenPoint - spacing;
+                Vector3 newEvenlySpacedPoint = pointOnCurve + (previousPoint - pointOnCurve).normalized * exceedence;
+
+                evenlySpacedPoints.Add(newEvenlySpacedPoint);
+
+                distanceSinceLastEvenPoint = exceedence;
+                previousPoint = newEvenlySpacedPoint;
+            }
+
+            distanceSinceLastEvenPoint += Vector3.Distance(previousPoint, pointOnCurve);
+            previousPoint = pointOnCurve;
+        }
+
+        evenlySpacedPoints.Add(points[points.Length-1]);
+        
+        return evenlySpacedPoints.ToArray();
+    }
+
+
+    public Vector3[] ConvertToVector3(Vector2[] vertices)
+    {
+        Vector3[] vertices3D = new Vector3[vertices.Length];
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            vertices3D[i] = new Vector3(vertices[i].x, vertices[i].y, 0f);
+        }
+
+        return vertices3D;
+    }
 
     Mesh CreateRoadMesh(Vector2[] points, bool isClosed)
     {
@@ -173,8 +274,11 @@ public class CrossroadPlacer : MonoBehaviour
         }
         Mesh mesh = new Mesh();
         
-        crossroadVertices.Add(vertices[1]);
-        crossroadVertices.Add(vertices[0]);
+        crossroadVerticesV2.Add(vertices[1]);
+        crossroadVerticesV2.Add(vertices[0]);
+        guideVerticesV2.Add(vertices[3]);
+        guideVerticesV2.Add(vertices[2]);
+
         mesh.vertices = vertices;
         mesh.uv = uvs;
         mesh.triangles = triangles;
