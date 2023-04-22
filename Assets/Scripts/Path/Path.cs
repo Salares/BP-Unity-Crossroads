@@ -242,7 +242,7 @@ using UnityEngine;
         } 
         AutoSetStartAndEndControls();
     }
-
+    
     void AutoSetAllControlPoints()
     {
         for (int i = 0; i < points.Count; i+= 3)

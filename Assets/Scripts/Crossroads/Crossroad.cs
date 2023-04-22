@@ -12,8 +12,6 @@ using UnityEngine;
         for (int i = 0; i < numberOfPaths; i++)
         {
             Path path = new Path(centre, i, numberOfPaths, startPointOffset,  endPointOffset,  controlPointOffset);
-            
-
             pathList.Add(path);
         }
     }
