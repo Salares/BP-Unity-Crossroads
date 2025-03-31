@@ -100,7 +100,7 @@ using UnityEditor;
 
             for (int i = 0; i < Path.NumSegments; i++)
             {
-                Vector2[] points = Path.GetPointsInSegment(i);
+                Vector3[] points = Path.GetPointsInSegment(i);
                 float distance = HandleUtility.DistancePointBezier(mousePos, points[0], points[3], points[1], points[2]);
                 if(distance < minDistanceToSegment)
                 {
@@ -124,7 +124,7 @@ using UnityEditor;
         Handles.color = creator.splineParameters.handlesColor;
         for (int i = 0; i < Path.NumSegments; i++)
         {
-            Vector2[] points = Path.GetPointsInSegment(i);
+            Vector3[] points = Path.GetPointsInSegment(i);
 
             if(creator.splineParameters.displayPoints)
             {
@@ -152,7 +152,7 @@ using UnityEditor;
                     diameter = creator.splineParameters.controlPointDiameter; 
                 }
 
-                Vector2 newPos = Handles.FreeMoveHandle(Path[i], Quaternion.identity, diameter, Vector2.zero, Handles.CylinderHandleCap);
+                Vector3 newPos = Handles.FreeMoveHandle(Path[i], Quaternion.identity, diameter, Vector2.zero, Handles.CylinderHandleCap);
                 if(Path[i] != newPos)
                 {
                     Undo.RecordObject(creator, "Move point");

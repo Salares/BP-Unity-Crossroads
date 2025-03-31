@@ -2,11 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// c:\Unity Projects\BP\Assets\Scripts\Path\PathCreator.cs
 public class PathCreator : MonoBehaviour
 {
     [HideInInspector] public Path path;
 
-    [System.Serializable] public class SplineParameters
+    [System.Serializable]
+    public class SplineParameters
     {
         public Color anchorColor = Color.red;
         public Color controlPointColor = Color.blue;
@@ -21,11 +23,11 @@ public class PathCreator : MonoBehaviour
     }
 
     public SplineParameters splineParameters;
-    
+
     public void CreatePath()
     {
         path = new Path(transform.position);
-        
+
     }
 
     void Reset()

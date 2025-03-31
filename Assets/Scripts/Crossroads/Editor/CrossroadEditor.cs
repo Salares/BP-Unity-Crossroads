@@ -46,7 +46,7 @@ using System;
             Handles.color = creator.splineParameters.handlesColor;
             for (int i = 0; i < path.NumSegments; i++)
             {
-                Vector2[] points = path.GetPointsInSegment(i);
+                Vector3[] points = path.GetPointsInSegment(i);
 
                 if(creator.splineParameters.displayPoints)
                 {
@@ -73,7 +73,7 @@ using System;
                         diameter = creator.splineParameters.controlPointDiameter; 
                     }
 
-                    Vector2 newPos = Handles.FreeMoveHandle(path[i], Quaternion.identity, diameter, Vector2.zero, Handles.CylinderHandleCap);
+                    Vector3 newPos = Handles.FreeMoveHandle(path[i], Quaternion.identity, diameter, Vector2.zero, Handles.CylinderHandleCap);
                     if(path[i] != newPos)
                     {
                         Undo.RecordObject(creator, "Move point");

@@ -2,51 +2,53 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-[System.Serializable] public class Path 
+// c:\Unity Projects\BP\Assets\Scripts\Path\Path.cs
+[System.Serializable]
+public class Path
 {
-    [SerializeField, HideInInspector] List<Vector2> points;
+    [SerializeField, HideInInspector] List<Vector3> points;
     [SerializeField, HideInInspector] bool isClosed;
     [SerializeField, HideInInspector] bool autoSetControlPoints;
 
-    public Path(Vector2 centre)
+    public Path(Vector3 centre)
     {
-        points = new List<Vector2>
+        points = new List<Vector3>
         {
-            centre + Vector2.left,
-            centre + (Vector2.left + Vector2.up),
-            centre + (Vector2.right + Vector2.down),
-            centre + Vector2.right
+            centre + Vector3.left,
+            centre + (Vector3.left + Vector3.forward),
+            centre + (Vector3.right + Vector3.back),
+            centre + Vector3.right
         };
-        Debug.Log("Created path at " + centre);
+        // Debug.Log("Created path at " + centre);
     }
 
-    public Path(Vector2 centre, int index, int numberOfPaths, float startPointOffset, float endPointOffset, float controlPointOffset)
+    public Path(Vector3 centre, int index, int numberOfPaths, float startPointOffset, float endPointOffset, float controlPointOffset)
     {
-        Vector2 startPoint = CalculatePointOnCircle(centre, index, numberOfPaths, startPointOffset);
-        Vector2 startPointControl = CalculatePointOnCircle(centre, index, numberOfPaths, startPointOffset + controlPointOffset);
-        Vector2 endPoint = CalculatePointOnCircle(centre, index, numberOfPaths, endPointOffset);
-        Vector2 endPointControl = CalculatePointOnCircle(centre, index, numberOfPaths, endPointOffset - controlPointOffset);
-        points = new List<Vector2>
+        Vector3 startPoint = CalculatePointOnCircle(centre, index, numberOfPaths, startPointOffset);
+        Vector3 startPointControl = CalculatePointOnCircle(centre, index, numberOfPaths, startPointOffset + controlPointOffset);
+        Vector3 endPoint = CalculatePointOnCircle(centre, index, numberOfPaths, endPointOffset);
+        Vector3 endPointControl = CalculatePointOnCircle(centre, index, numberOfPaths, endPointOffset - controlPointOffset);
+        points = new List<Vector3>
         {
-            startPoint, 
+            startPoint,
             startPointControl,
             endPointControl,
             endPoint
         };
-        Debug.Log("Created path at " + startPoint + " to " + endPoint);
+        // Debug.Log("Created path at " + startPoint + " to " + endPoint);
     }
 
-    private Vector2 CalculatePointOnCircle(Vector2 centre, int index, int numberOfPaths, float radius = 1f)
+    private Vector3 CalculatePointOnCircle(Vector3 centre, int index, int numberOfPaths, float radius = 1f)
     {
         float angle = index * 360f / numberOfPaths;
 
         float x = centre.x + radius * Mathf.Cos(angle * Mathf.Deg2Rad);
-        float y = centre.y + radius * Mathf.Sin(angle * Mathf.Deg2Rad);
+        float z = centre.z + radius * Mathf.Sin(angle * Mathf.Deg2Rad);
 
-        return new Vector2(x,y);
+        return new Vector3(x, 0, z);
     }
 
-    public Vector2 this[int i]
+    public Vector3 this[int i]
     {
         get { return points[i]; }
     }
@@ -56,27 +58,27 @@ using UnityEngine;
         get { return isClosed; }
         set
         {
-            if(isClosed != value)
+            if (isClosed != value)
             {
                 isClosed = value;
 
-                if(isClosed)
+                if (isClosed)
                 {
                     points.Add((points[points.Count - 1] * 2) - points[points.Count - 2]);
                     points.Add((points[0] * 2) - points[1]);
                     if (autoSetControlPoints)
                     {
                         AutoSetAnchorControlPoints(0);
-                        AutoSetAnchorControlPoints(points.Count-3);
+                        AutoSetAnchorControlPoints(points.Count - 3);
                     }
                 }
                 else
                 {
-                    points.RemoveRange(points.Count-2, 2);
+                    points.RemoveRange(points.Count - 2, 2);
                     if (autoSetControlPoints)
                     {
                         AutoSetStartAndEndControls();
-                        
+
                     }
                 }
             }
@@ -87,10 +89,10 @@ using UnityEngine;
         get { return autoSetControlPoints; }
         set
         {
-            if(autoSetControlPoints != value)
+            if (autoSetControlPoints != value)
             {
                 autoSetControlPoints = value;
-                if(autoSetControlPoints)
+                if (autoSetControlPoints)
                 {
                     AutoSetAllControlPoints();
                 }
@@ -102,7 +104,7 @@ using UnityEngine;
 
     public int NumSegments { get { return points.Count / 3; } }
 
-    public void AddSegment(Vector2 anchorPos)
+    public void AddSegment(Vector3 anchorPos)
     {
         // P3 + (P3 - P2) = P3*2 - P2
         points.Add((points[points.Count - 1] * 2) - points[points.Count - 2]);
@@ -111,70 +113,70 @@ using UnityEngine;
         points.Add((points[points.Count - 1] + anchorPos) * .5f);
         points.Add(anchorPos);
 
-        if(autoSetControlPoints)
+        if (autoSetControlPoints)
         {
-            AutoSetAllAffectedControlPoints(points.Count-1);
+            AutoSetAllAffectedControlPoints(points.Count - 1);
         }
     }
 
-    public void SplitSegment(Vector2 anchorPos, int segmentIndex)
+    public void SplitSegment(Vector3 anchorPos, int segmentIndex)
     {
-        points.InsertRange(segmentIndex * 3 + 2, new Vector2[]{Vector2.zero, anchorPos, Vector2.zero});
-        if(autoSetControlPoints) { AutoSetAllAffectedControlPoints(segmentIndex*3+3); }
-        else { AutoSetAnchorControlPoints(segmentIndex*3+3); }
+        points.InsertRange(segmentIndex * 3 + 2, new Vector3[] { Vector3.zero, anchorPos, Vector3.zero });
+        if (autoSetControlPoints) { AutoSetAllAffectedControlPoints(segmentIndex * 3 + 3); }
+        else { AutoSetAnchorControlPoints(segmentIndex * 3 + 3); }
     }
 
     public void DeleteSegment(int anchorIndex)
     {
-        if(NumSegments > 2 || !isClosed && NumSegments > 1)
+        if (NumSegments > 2 || !isClosed && NumSegments > 1)
         {
-            if(anchorIndex == 0)
+            if (anchorIndex == 0)
             {
-                if(isClosed) { points[points.Count - 1] = points[2]; }
-                points.RemoveRange(0,3);
+                if (isClosed) { points[points.Count - 1] = points[2]; }
+                points.RemoveRange(0, 3);
             }
             else if (anchorIndex == points.Count - 1 && !isClosed) { points.RemoveRange(anchorIndex - 2, 3); }
             else { points.RemoveRange(anchorIndex - 1, 3); }
         }
     }
 
-    public Vector2[] GetPointsInSegment(int i)
+    public Vector3[] GetPointsInSegment(int i)
     {
-        if ( i > NumSegments)
+        if (i > NumSegments)
         {
             return null;
         }
-        return new Vector2[]{ points[i*3], points[i*3+1], points[i*3+2], points[LoopIndex(i*3+3)] };
+        return new Vector3[] { points[i * 3], points[i * 3 + 1], points[i * 3 + 2], points[LoopIndex(i * 3 + 3)] };
     }
 
-    public void MovePoint(int i, Vector2 pos)
+    public void MovePoint(int i, Vector3 pos)
     {
-        Vector2 deltaMove = pos - points[i];
-        if(i % 3 == 0 || !autoSetControlPoints)
+        Vector3 deltaMove = pos - points[i];
+        if (i % 3 == 0 || !autoSetControlPoints)
         {
             points[i] = pos;
 
-            if(autoSetControlPoints)
+            if (autoSetControlPoints)
             {
                 AutoSetAllAffectedControlPoints(i);
             }
             else
             {
-                if ( i % 3 == 0 )
+                if (i % 3 == 0)
                 {
-                    if(i+1 < points.Count || isClosed) { points[LoopIndex(i+1)] += deltaMove; }
-                    if(i-1 >= 0 || isClosed) { points[LoopIndex(i-1)] += deltaMove; }
+                    if (i + 1 < points.Count || isClosed) { points[LoopIndex(i + 1)] += deltaMove; }
+                    if (i - 1 >= 0 || isClosed) { points[LoopIndex(i - 1)] += deltaMove; }
                 }
                 else
                 {
-                    bool nextPointIsAnchor = (i+1)%3 == 0;
-                    int correspondingCotrolIndex = (nextPointIsAnchor) ? i+2 : i-2;
-                    int anchorIndex = (nextPointIsAnchor) ? i+1 : i-1;
+                    bool nextPointIsAnchor = (i + 1) % 3 == 0;
+                    int correspondingCotrolIndex = (nextPointIsAnchor) ? i + 2 : i - 2;
+                    int anchorIndex = (nextPointIsAnchor) ? i + 1 : i - 1;
 
-                    if(correspondingCotrolIndex >= 0 && correspondingCotrolIndex < points.Count || isClosed )
+                    if (correspondingCotrolIndex >= 0 && correspondingCotrolIndex < points.Count || isClosed)
                     {
                         float distance = (points[LoopIndex(anchorIndex)] - points[LoopIndex(correspondingCotrolIndex)]).magnitude;
-                        Vector2 direction = (points[LoopIndex(anchorIndex)] - pos).normalized;
+                        Vector3 direction = (points[LoopIndex(anchorIndex)] - pos).normalized;
                         points[LoopIndex(correspondingCotrolIndex)] = points[LoopIndex(anchorIndex)] + direction * distance;
                     }
                 }
@@ -182,35 +184,35 @@ using UnityEngine;
         }
     }
 
-    public Vector2[] CalculateEvenlySpacedPoints(float spacing, float resolution = 1)
+    public Vector3[] CalculateEvenlySpacedPoints(float spacing, float resolution = 1)
     {
-        List<Vector2> evenlySpacedPoints = new List<Vector2>();
+        List<Vector3> evenlySpacedPoints = new List<Vector3>();
         evenlySpacedPoints.Add(points[0]);
-        Vector2 previousPoint = points[0];
+        Vector3 previousPoint = points[0];
         float distanceSinceLastEvenPoint = 0;
 
         for (int segmentIndex = 0; segmentIndex < NumSegments; segmentIndex++)
         {
-            Vector2[] pointsInSegment = GetPointsInSegment(segmentIndex);
-            float controlNetLength = 
-                Vector2.Distance(pointsInSegment[0],pointsInSegment[1]) + 
-                Vector2.Distance(pointsInSegment[1],pointsInSegment[2]) + 
-                Vector2.Distance(pointsInSegment[2],pointsInSegment[3]);
+            Vector3[] pointsInSegment = GetPointsInSegment(segmentIndex);
+            float controlNetLength =
+                Vector3.Distance(pointsInSegment[0], pointsInSegment[1]) +
+                Vector3.Distance(pointsInSegment[1], pointsInSegment[2]) +
+                Vector3.Distance(pointsInSegment[2], pointsInSegment[3]);
 
-            float estimatedCurveLength =  Vector2.Distance(pointsInSegment[0],pointsInSegment[3]) + controlNetLength / 2;
+            float estimatedCurveLength = Vector3.Distance(pointsInSegment[0], pointsInSegment[3]) + controlNetLength / 2;
             int divisions = Mathf.CeilToInt(estimatedCurveLength * resolution * 10);
-            float interval = 1f/divisions;
+            float interval = 1f / divisions;
 
             float time = 0;
-            while(time <= 1)
+            while (time <= 1)
             {
                 time += interval;
-                Vector2 pointOnCurve = Bezier.Evaluate(pointsInSegment[0],pointsInSegment[1],pointsInSegment[2],pointsInSegment[3],BezierType.Cubic, time);
-                
-                while(distanceSinceLastEvenPoint >= spacing)
+                Vector3 pointOnCurve = Bezier.Evaluate(pointsInSegment[0], pointsInSegment[1], pointsInSegment[2], pointsInSegment[3], BezierType.Cubic, time);
+
+                while (distanceSinceLastEvenPoint >= spacing)
                 {
                     float exceedence = distanceSinceLastEvenPoint - spacing;
-                    Vector2 newEvenlySpacedPoint = pointOnCurve + (previousPoint - pointOnCurve).normalized * exceedence;
+                    Vector3 newEvenlySpacedPoint = pointOnCurve + (previousPoint - pointOnCurve).normalized * exceedence;
 
                     evenlySpacedPoints.Add(newEvenlySpacedPoint);
 
@@ -218,7 +220,7 @@ using UnityEngine;
                     previousPoint = newEvenlySpacedPoint;
                 }
 
-                distanceSinceLastEvenPoint += Vector2.Distance(previousPoint, pointOnCurve);
+                distanceSinceLastEvenPoint += Vector3.Distance(previousPoint, pointOnCurve);
                 previousPoint = pointOnCurve;
             }
         }
@@ -228,46 +230,46 @@ using UnityEngine;
 
     public int LoopIndex(int i)
     {
-        return( i + points.Count ) % points.Count;
+        return (i + points.Count) % points.Count;
     }
 
     void AutoSetAllAffectedControlPoints(int updatedAnchorIndex)
     {
-        for(int i = updatedAnchorIndex - 3 ; i <= updatedAnchorIndex + 3; i += 3)
+        for (int i = updatedAnchorIndex - 3; i <= updatedAnchorIndex + 3; i += 3)
         {
-            if(i >= 0 && i < points.Count || isClosed)
+            if (i >= 0 && i < points.Count || isClosed)
             {
                 AutoSetAnchorControlPoints(LoopIndex(i));
             }
-        } 
+        }
         AutoSetStartAndEndControls();
     }
-    
+
     void AutoSetAllControlPoints()
     {
-        for (int i = 0; i < points.Count; i+= 3)
+        for (int i = 0; i < points.Count; i += 3)
         {
-           AutoSetAnchorControlPoints(i);
+            AutoSetAnchorControlPoints(i);
         }
         AutoSetStartAndEndControls();
     }
 
     void AutoSetAnchorControlPoints(int anchorIndex)
     {
-        Vector2 anchorPos = points[anchorIndex];
-        Vector2 direction = Vector2.zero;
+        Vector3 anchorPos = points[anchorIndex];
+        Vector3 direction = Vector3.zero;
         float[] neighbourDistances = new float[2];
 
-        if(anchorIndex - 3 >= 0 || isClosed)
+        if (anchorIndex - 3 >= 0 || isClosed)
         {
-            Vector2 offset = points[LoopIndex(anchorIndex - 3)] - anchorPos;
+            Vector3 offset = points[LoopIndex(anchorIndex - 3)] - anchorPos;
             direction += offset.normalized;
             neighbourDistances[0] = offset.magnitude;
         }
 
-        if(anchorIndex + 3 >= 0 || isClosed)
+        if (anchorIndex + 3 >= 0 || isClosed)
         {
-            Vector2 offset = points[LoopIndex(anchorIndex + 3)] - anchorPos;
+            Vector3 offset = points[LoopIndex(anchorIndex + 3)] - anchorPos;
             direction -= offset.normalized;
             neighbourDistances[1] = -offset.magnitude;
         }
@@ -277,7 +279,7 @@ using UnityEngine;
         for (int i = 0; i < 2; i++)
         {
             int controlIndex = anchorIndex + i * 2 - 1;
-            if(controlIndex >= 0 && controlIndex < points.Count || isClosed)
+            if (controlIndex >= 0 && controlIndex < points.Count || isClosed)
             {
                 points[LoopIndex(controlIndex)] = anchorPos + direction * neighbourDistances[i] * .5f;
             }
@@ -286,10 +288,10 @@ using UnityEngine;
 
     void AutoSetStartAndEndControls()
     {
-        if(!isClosed)
+        if (!isClosed)
         {
             points[1] = (points[0] + points[2]) * .5f;
-            points[points.Count-2] = (points[points.Count-3] + points[points.Count-1]) * .5f;
+            points[points.Count - 2] = (points[points.Count - 3] + points[points.Count - 1]) * .5f;
         }
     }
 }

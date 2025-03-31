@@ -2,25 +2,33 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// c:\Unity Projects\BP\Assets\Scripts\Crossroads\CrossroadTools.cs
 public static class CrossroadTools
 {
     public static Vector3 CalculateIntersection(Vector3 a, Vector3 b, Vector3 c, Vector3 d)
     {
-        Vector3 ab = b - a;
-        Vector3 cd = d - c;
-        Vector3 ac = c - a;
+        Vector2 a2 = new Vector2(a.x, a.z);
+        Vector2 b2 = new Vector2(b.x, b.z);
+        Vector2 c2 = new Vector2(c.x, c.z);
+        Vector2 d2 = new Vector2(d.x, d.z);
 
-        float crossProduct = Vector3.Cross(ab, cd).magnitude;
+        Vector2 ab = b2 - a2;
+        Vector2 cd = d2 - c2;
 
-        if (crossProduct < 0.00001f)
+        float denominator = ab.x * cd.y - ab.y * cd.x;
+
+        if (Mathf.Abs(denominator) < 0.00001f)
         {
             Debug.LogError("Lines are parallel, intersection point cannot be calculated.");
-            return Vector3.zero;
+            Vector3 fallback = (a + c) * 0.5f;
+            fallback.y = a.y; // maintain height
+            return fallback;
         }
 
-        float s = Vector3.Cross(ac, cd).magnitude / crossProduct;
-        Vector3 intersection = a + s * ab;
+        Vector2 ac = c2 - a2;
+        float t = (ac.x * cd.y - ac.y * cd.x) / denominator;
 
-        return intersection;
+        Vector2 intersection2D = a2 + t * ab;
+        return new Vector3(intersection2D.x, a.y, intersection2D.y); // Keep original Y
     }
 }

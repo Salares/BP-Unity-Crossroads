@@ -17,14 +17,14 @@ public class RoadPlacer : MonoBehaviour
     public void UpdateRoad()
     {
         Path path = GetComponent<PathCreator>().path;
-        Vector2[] points = path.CalculateEvenlySpacedPoints(spacing);
+        Vector3[] points = path.CalculateEvenlySpacedPoints(spacing);
         GetComponent<MeshFilter>().mesh = CreateRoadMesh(points, path.IsClosed);
 
         int textureRepeat = Mathf.RoundToInt(tiling * points.Length * spacing * 0.05f);
-        GetComponent<MeshRenderer>().sharedMaterial.mainTextureScale = new Vector2(1, textureRepeat);
+        GetComponent<MeshRenderer>().sharedMaterial.mainTextureScale = new Vector3(1, textureRepeat);
     }
 
-    Mesh CreateRoadMesh(Vector2[] points, bool isClosed)
+    Mesh CreateRoadMesh(Vector3[] points, bool isClosed)
     {
         int numberOfTriangles = 2 * (points.Length - 1) + ((isClosed) ? 2 : 0);
 
@@ -37,7 +37,7 @@ public class RoadPlacer : MonoBehaviour
 
         for (int i = 0; i < points.Length; i++)
         {
-            Vector2 forward = Vector2.zero;
+            Vector3 forward = Vector3.zero;
             if(i < points.Length - 1 || isClosed)
             {
                 forward += points[(i+1) % points.Length] - points[i];
@@ -49,7 +49,7 @@ public class RoadPlacer : MonoBehaviour
             }
             forward.Normalize();
 
-            Vector2 left = new Vector2(-forward.y, forward.x);
+            Vector3 left = new Vector3(-forward.y, 0, forward.x);
 
             vertices[vertexIndex] = points[i] + left * roadWidth *.5f;
             vertices[vertexIndex + 1] = points[i] - left * roadWidth *.5f;

@@ -2,11 +2,13 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// c:\Unity Projects\BP\Assets\Scripts\Crossroads\CrossroadCreator.cs
 [RequireComponent(typeof(MeshFilter))]
 [RequireComponent(typeof(MeshRenderer))]
 public class CrossroadCreator : MonoBehaviour
 {
-    [System.Serializable] public class SplineParameters
+    [System.Serializable]
+    public class SplineParameters
     {
         public Color anchorColor = Color.red;
         public Color controlPointColor = Color.blue;
@@ -25,7 +27,7 @@ public class CrossroadCreator : MonoBehaviour
     [HideInInspector] public Crossroad crossroad;
 
     [Header("Crossroad Options")]
-    [Range(2, 16)]public int numberOfPaths = 2;
+    [Range(2, 16)] public int numberOfPaths = 2;
 
     [Header("Road positioning")]
     [Range(0f, 2f)] public float startPointOffset = 0.2f;

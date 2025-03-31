@@ -2,28 +2,15 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
+// c:\Unity Projects\BP\Assets\Scripts\Path\Bezier.cs
 public enum BezierType
 {
     Cubic,
     Quadratic
 }
 
-public static class Bezier 
+public static class Bezier
 {
-    public static Vector2 EvaluateQuadratic(Vector2 a, Vector2 b, Vector2 c, float t)
-    {
-        Vector2 p0 = Vector2.Lerp(a,b,t);
-        Vector2 p1 = Vector2.Lerp(b,c,t);
-        return Vector2.Lerp(p0,p1,t);
-    }
-
-    public static Vector2 EvaluateCubic(Vector2 a, Vector2 b, Vector2 c, Vector2 d, float t)
-    {
-        Vector2 p0 = EvaluateQuadratic(a,b,c,t);
-        Vector2 p1 = EvaluateQuadratic(b,c,d,t);
-        return Vector2.Lerp(p0,p1,t);   
-    }
-
     public static Vector3 EvaluateQuadratic(Vector3 a, Vector3 b, Vector3 c, float t)
     {
         Vector3 p0 = Vector3.Lerp(a, b, t);
@@ -47,7 +34,7 @@ public static class Bezier
             case BezierType.Cubic:
                 return EvaluateCubic(a, b, c, d, t);
             default:
-                Debug.LogError("Unsupported BezierType: " + type);
+                // Debug.LogError("Unsupported BezierType: " + type);
                 return Vector3.zero;
         }
     }
