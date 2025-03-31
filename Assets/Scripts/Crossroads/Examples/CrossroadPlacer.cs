@@ -4,14 +4,14 @@ using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter))]
 [RequireComponent(typeof(MeshRenderer))]
-[RequireComponent(typeof(CrossroadCreator))] 
+[RequireComponent(typeof(CrossroadCreator))]
 public class CrossroadPlacer : MonoBehaviour
 {
     [Header("Crossroad Mesh Options")]
     [Range(0.05f, 3f)] public float roadWidth = 1f;
     [Range(.005f, 0.5f)] public float spacing = 1f;
     [Range(1f, 1000f)] public float tiling = 1;
-    
+
     public Material roadMaterial;
     public Material crossroadMaterial;
 
@@ -32,10 +32,10 @@ public class CrossroadPlacer : MonoBehaviour
         }
 
         int i = 0;
-        foreach (Path path in crossroad) 
+        foreach (Path path in crossroad)
         {
             Vector2[] points = path.CalculateEvenlySpacedPoints(spacing);
-            Debug.DrawLine(points[0],points[1], Color.blue, 10f);
+            Debug.DrawLine(new Vector3(points[0].x, 0, points[0].y), new Vector3(points[1].x, 0, points[1].y), Color.blue, 10f);
 
             GameObject meshObject = new GameObject("Road " + i);
 
@@ -50,7 +50,7 @@ public class CrossroadPlacer : MonoBehaviour
 
             meshFilter.mesh = CreateRoadMesh(points, false);
 
-            i+=1;
+            i += 1;
         }
 
         GameObject crossroadObject = new GameObject("Crossroad");
@@ -72,15 +72,15 @@ public class CrossroadPlacer : MonoBehaviour
         int guideLength = guideVertices.Length;
 
         List<Vector3[]> splineList = new List<Vector3[]>();
-        
-        for (int i = 1 ; i < verticesNoCenter.Length ; i+=2) 
+
+        for (int i = 1; i < verticesNoCenter.Length; i += 2)
         {
             Vector3 a = verticesNoCenter[i];
             Vector3 b = guideVertices[i];
-            Vector3 c = verticesNoCenter[(i+1)%vertLength];
-            Vector3 d = guideVertices[(i+1)%guideLength];
+            Vector3 c = verticesNoCenter[(i + 1) % vertLength];
+            Vector3 d = guideVertices[(i + 1) % guideLength];
 
-            Vector3 intersectionPoint = CrossroadTools.CalculateIntersection(b,a,d,c);
+            Vector3 intersectionPoint = CrossroadTools.CalculateIntersection(b, a, d, c);
 
             List<Vector3> pointsList = new List<Vector3>
             {
@@ -103,7 +103,7 @@ public class CrossroadPlacer : MonoBehaviour
             foreach (Vector3 point in spline)
             {
                 verticesList.Add(point);
-            }    
+            }
         }
 
         Vector3[] vertices = verticesList.ToArray();
@@ -112,9 +112,8 @@ public class CrossroadPlacer : MonoBehaviour
 
         for (int i = 0; i < vertices.Length; i++)
         {
-            Vector2 coordinate = new Vector2(Vector3.Distance(vertices[i], center), AngleBetweenVectors(vertices[i],Vector3.up)/360f);
+            Vector2 coordinate = new Vector2(Vector3.Distance(vertices[i], center), AngleBetweenVectors(vertices[i], Vector3.forward) / 360f);
             uvs[i] = coordinate;
-            Debug.Log(coordinate);
         }
         int triangleIndex = 0;
         for (int i = 1; i < vertices.Length - 1; i++)
@@ -149,22 +148,22 @@ public class CrossroadPlacer : MonoBehaviour
         evenlySpacedPoints.Add(points[0]);
         Vector3 previousPoint = points[0];
         float distanceSinceLastEvenPoint = 0;
-       
-        float controlNetLength = 
-            Vector3.Distance(points[0],points[1]) + 
-            Vector3.Distance(points[1],points[2]);
 
-        float estimatedCurveLength =  Vector3.Distance(points[0],points[2]) + controlNetLength / 2;
+        float controlNetLength =
+            Vector3.Distance(points[0], points[1]) +
+            Vector3.Distance(points[1], points[2]);
+
+        float estimatedCurveLength = Vector3.Distance(points[0], points[2]) + controlNetLength / 2;
         int divisions = Mathf.CeilToInt(estimatedCurveLength * resolution * 10);
-        float interval = 1f/divisions;
+        float interval = 1f / divisions;
 
         float time = 0;
-        while(time <= 1)
+        while (time <= 1)
         {
             time += interval;
-            Vector3 pointOnCurve = Bezier.EvaluateQuadratic(points[0],points[1],points[2], time);
-            
-            while(distanceSinceLastEvenPoint >= spacing)
+            Vector3 pointOnCurve = Bezier.EvaluateQuadratic(points[0], points[1], points[2], time);
+
+            while (distanceSinceLastEvenPoint >= spacing)
             {
                 float exceedence = distanceSinceLastEvenPoint - spacing;
                 Vector3 newEvenlySpacedPoint = pointOnCurve + (previousPoint - pointOnCurve).normalized * exceedence;
@@ -179,8 +178,8 @@ public class CrossroadPlacer : MonoBehaviour
             previousPoint = pointOnCurve;
         }
 
-        evenlySpacedPoints.Add(points[points.Length-1]);
-        
+        evenlySpacedPoints.Add(points[points.Length - 1]);
+
         return evenlySpacedPoints.ToArray();
     }
 
@@ -191,7 +190,7 @@ public class CrossroadPlacer : MonoBehaviour
 
         for (int i = 0; i < vertices.Length; i++)
         {
-            vertices3D[i] = new Vector3(vertices[i].x, vertices[i].y, 0f);
+            vertices3D[i] = new Vector3(vertices[i].x, 0f, vertices[i].y);
         }
 
         return vertices3D;
@@ -210,29 +209,29 @@ public class CrossroadPlacer : MonoBehaviour
 
         for (int i = 0; i < points.Length; i++)
         {
-            Vector2 forward = Vector2.zero;
-            if(i < points.Length - 1 || isClosed)
+            Vector3 forward = Vector3.zero;
+            if (i < points.Length - 1 || isClosed)
             {
-                forward += points[(i+1) % points.Length] - points[i];
+                forward += new Vector3(points[(i + 1) % points.Length].x, 0, points[(i + 1) % points.Length].y) - new Vector3(points[i].x, 0, points[i].y);
             }
 
-            if(i > 0 || isClosed)
+            if (i > 0 || isClosed)
             {
-                forward += points[i] - points[(i-1 + points.Length) % points.Length];
+                forward += new Vector3(points[i].x, 0, points[i].y) - new Vector3(points[(i - 1 + points.Length) % points.Length].x, 0, points[(i - 1 + points.Length) % points.Length].y);
             }
             forward.Normalize();
 
-            Vector2 left = new Vector2(-forward.y, forward.x);
+            Vector3 left = new Vector3(-forward.z, 0, forward.x);
 
-            vertices[vertexIndex] = points[i] + left * roadWidth *.5f;
-            vertices[vertexIndex + 1] = points[i] - left * roadWidth *.5f;
+            vertices[vertexIndex] = new Vector3(points[i].x, 0, points[i].y) + left * roadWidth * .5f;
+            vertices[vertexIndex + 1] = new Vector3(points[i].x, 0, points[i].y) - left * roadWidth * .5f;
 
-            float completionPercent = i / (float)(points.Length-1);
+            float completionPercent = i / (float)(points.Length - 1);
             float v = 1 - Mathf.Abs(2 * completionPercent - 1);
-            uvs[vertexIndex] = new Vector2(0,v);
+            uvs[vertexIndex] = new Vector2(0, v);
             uvs[vertexIndex + 1] = new Vector2(1, v);
 
-            if(i < points.Length - 1 || isClosed)
+            if (i < points.Length - 1 || isClosed)
             {
                 triangles[triangleIndex] = vertexIndex;
                 triangles[triangleIndex + 1] = (vertexIndex + 2) % vertices.Length;
@@ -247,11 +246,11 @@ public class CrossroadPlacer : MonoBehaviour
             triangleIndex += 6;
         }
         Mesh mesh = new Mesh();
-        
-        crossroadVerticesV2.Add(vertices[1]);
-        crossroadVerticesV2.Add(vertices[0]);
-        guideVerticesV2.Add(vertices[3]);
-        guideVerticesV2.Add(vertices[2]);
+
+        crossroadVerticesV2.Add(new Vector2(vertices[1].x, vertices[1].z));
+        crossroadVerticesV2.Add(new Vector2(vertices[0].x, vertices[0].z));
+        guideVerticesV2.Add(new Vector2(vertices[3].x, vertices[3].z));
+        guideVerticesV2.Add(new Vector2(vertices[2].x, vertices[2].z));
 
         mesh.vertices = vertices;
         mesh.uv = uvs;

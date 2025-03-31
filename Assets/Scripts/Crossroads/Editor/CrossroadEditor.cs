@@ -4,7 +4,8 @@ using UnityEngine;
 using UnityEditor;
 using System;
 
-[CustomEditor(typeof(CrossroadCreator))] public class CrossroadEditor : Editor
+[CustomEditor(typeof(CrossroadCreator))]
+public class CrossroadEditor : Editor
 {
     CrossroadCreator creator;
 
@@ -16,16 +17,16 @@ using System;
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
-        
+
 
         EditorGUI.BeginChangeCheck();
-        if(GUILayout.Button("Create New Crossroad"))
+        if (GUILayout.Button("Create New Crossroad"))
         {
             Undo.RecordObject(creator, "Create New Crossroad");
             creator.CreateCrossroad();
         }
-        
-        if(EditorGUI.EndChangeCheck())
+
+        if (EditorGUI.EndChangeCheck())
         {
             SceneView.RepaintAll();
         }
@@ -39,7 +40,7 @@ using System;
 
     private void Draw()
     {
-        
+
 
         foreach (Path path in Crossroad)
         {
@@ -48,36 +49,43 @@ using System;
             {
                 Vector2[] points = path.GetPointsInSegment(i);
 
-                if(creator.splineParameters.displayPoints)
+                // Convert points to Vector3 for XZ plane
+                Vector3[] points3D = ConvertToVector3(points);
+
+                if (creator.splineParameters.displayPoints)
                 {
-                    Handles.DrawLine(points[1], points[0]);
-                    Handles.DrawLine(points[3], points[2]);
+                    Handles.DrawLine(points3D[1], points3D[0]);
+                    Handles.DrawLine(points3D[3], points3D[2]);
                 }
 
                 Color segmentCol = creator.splineParameters.segmentColor;
-                Handles.DrawBezier(points[0], points[3], points[1], points[2], segmentCol, null, creator.splineParameters.splineWidth);
+                Handles.DrawBezier(points3D[0], points3D[3], points3D[1], points3D[2], segmentCol, null, creator.splineParameters.splineWidth);
             }
             float diameter = creator.splineParameters.controlPointDiameter;
-            if(creator.splineParameters.displayPoints)
+            if (creator.splineParameters.displayPoints)
             {
                 for (int i = 0; i < path.NumPoints; i++)
                 {
-                    if(i % 3 == 0 ) 
-                    { 
+                    if (i % 3 == 0)
+                    {
                         Handles.color = creator.splineParameters.anchorColor;
-                        diameter = creator.splineParameters.anchorDiameter; 
+                        diameter = creator.splineParameters.anchorDiameter;
                     }
-                    else 
+                    else
                     {
                         Handles.color = creator.splineParameters.controlPointColor;
-                        diameter = creator.splineParameters.controlPointDiameter; 
+                        diameter = creator.splineParameters.controlPointDiameter;
                     }
 
-                    Vector2 newPos = Handles.FreeMoveHandle(path[i], Quaternion.identity, diameter, Vector2.zero, Handles.CylinderHandleCap);
-                    if(path[i] != newPos)
+                    // Convert point to Vector3 for XZ plane
+                    Vector3 point3D = new Vector3(path[i].x, 0, path[i].y);
+
+                    Vector3 newPos3D = Handles.FreeMoveHandle(point3D, Quaternion.identity, diameter, Vector3.zero, Handles.CylinderHandleCap);
+                    if (point3D != newPos3D)
                     {
                         Undo.RecordObject(creator, "Move point");
-                        path.MovePoint(i, newPos);
+                        // Convert back to Vector2 for path.MovePoint
+                        path.MovePoint(i, new Vector2(newPos3D.x, newPos3D.z));
                     }
                 }
             }
@@ -85,10 +93,23 @@ using System;
 
     }
 
+    // Helper function to convert Vector2 array to Vector3 array for XZ plane
+    private Vector3[] ConvertToVector3(Vector2[] vertices)
+    {
+        Vector3[] vertices3D = new Vector3[vertices.Length];
+
+        for (int i = 0; i < vertices.Length; i++)
+        {
+            vertices3D[i] = new Vector3(vertices[i].x, 0f, vertices[i].y);
+        }
+
+        return vertices3D;
+    }
+
     void OnEnable()
     {
         creator = (CrossroadCreator)target;
-        if(creator.crossroad == null)
+        if (creator.crossroad == null)
         {
             creator.CreateCrossroad();
         }
