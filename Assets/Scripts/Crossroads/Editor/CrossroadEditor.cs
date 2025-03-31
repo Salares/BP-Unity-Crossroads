@@ -8,16 +8,13 @@ using System;
 public class CrossroadEditor : Editor
 {
     CrossroadCreator creator;
+    CrossroadPlacer placer;
 
-    Crossroad Crossroad
-    {
-        get { return creator.crossroad; }
-    }
+    Crossroad Crossroad => creator.crossroad;
 
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
-
 
         EditorGUI.BeginChangeCheck();
         if (GUILayout.Button("Create New Crossroad"))
@@ -34,22 +31,17 @@ public class CrossroadEditor : Editor
 
     void OnSceneGUI()
     {
-        // Input();
         Draw();
     }
 
     private void Draw()
     {
-
-
         foreach (Path path in Crossroad)
         {
             Handles.color = creator.splineParameters.handlesColor;
             for (int i = 0; i < path.NumSegments; i++)
             {
                 Vector2[] points = path.GetPointsInSegment(i);
-
-                // Convert points to Vector3 for XZ plane
                 Vector3[] points3D = ConvertToVector3(points);
 
                 if (creator.splineParameters.displayPoints)
@@ -58,10 +50,11 @@ public class CrossroadEditor : Editor
                     Handles.DrawLine(points3D[3], points3D[2]);
                 }
 
-                Color segmentCol = creator.splineParameters.segmentColor;
-                Handles.DrawBezier(points3D[0], points3D[3], points3D[1], points3D[2], segmentCol, null, creator.splineParameters.splineWidth);
+                Handles.DrawBezier(points3D[0], points3D[3], points3D[1], points3D[2],
+                    creator.splineParameters.segmentColor, null, creator.splineParameters.splineWidth);
             }
-            float diameter = creator.splineParameters.controlPointDiameter;
+
+            float diameter;
             if (creator.splineParameters.displayPoints)
             {
                 for (int i = 0; i < path.NumPoints; i++)
@@ -77,23 +70,19 @@ public class CrossroadEditor : Editor
                         diameter = creator.splineParameters.controlPointDiameter;
                     }
 
-                    // Convert point to Vector3 for XZ plane
                     Vector3 point3D = new Vector3(path[i].x, 0, path[i].y);
-
                     Vector3 newPos3D = Handles.FreeMoveHandle(point3D, Quaternion.identity, diameter, Vector3.zero, Handles.CylinderHandleCap);
                     if (point3D != newPos3D)
                     {
                         Undo.RecordObject(creator, "Move point");
-                        // Convert back to Vector2 for path.MovePoint
                         path.MovePoint(i, new Vector2(newPos3D.x, newPos3D.z));
+                        placer?.UpdateCrossroad();
                     }
                 }
             }
         }
-
     }
 
-    // Helper function to convert Vector2 array to Vector3 array for XZ plane
     private Vector3[] ConvertToVector3(Vector2[] vertices)
     {
         Vector3[] vertices3D = new Vector3[vertices.Length];
@@ -109,6 +98,7 @@ public class CrossroadEditor : Editor
     void OnEnable()
     {
         creator = (CrossroadCreator)target;
+        placer = creator.GetComponent<CrossroadPlacer>();
         if (creator.crossroad == null)
         {
             creator.CreateCrossroad();

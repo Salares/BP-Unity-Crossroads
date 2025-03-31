@@ -35,7 +35,8 @@ public class CrossroadCreator : MonoBehaviour
 
     public void CreateCrossroad()
     {
-        crossroad = new Crossroad(transform.position, numberOfPaths, startPointOffset, endPointOffset, controlPointOffset);
+        crossroad = new Crossroad(new Vector2(transform.position.x, transform.position.z), numberOfPaths, startPointOffset, endPointOffset, controlPointOffset);
+
     }
 
     void Start()

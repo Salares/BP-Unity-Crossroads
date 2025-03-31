@@ -258,4 +258,132 @@ public class CrossroadPlacer : MonoBehaviour
 
         return mesh;
     }
+
+   public void BakeCrossroad()
+{
+    Debug.Log("BakeCrossroad called");
+
+    // Must initialize BEFORE calling UpdateCrossroad to avoid clearing important data
+    crossroadVerticesV2 = new List<Vector2>();
+    guideVerticesV2 = new List<Vector2>();
+
+    UpdateCrossroad(); // Regenerate procedural mesh
+
+    MeshFilter[] meshFilters = GetComponentsInChildren<MeshFilter>();
+    Debug.Log("Found " + meshFilters.Length + " MeshFilters in children.");
+    List<CombineInstance> combine = new List<CombineInstance>();
+    List<Material> materials = new List<Material>();
+
+    Matrix4x4 parentWorldToLocal = transform.worldToLocalMatrix;
+
+    foreach (MeshFilter meshFilter in meshFilters)
+    {
+        if (meshFilter.sharedMesh == null) continue;
+
+        Debug.Log("Checking MeshFilter: " + meshFilter.gameObject.name);
+        if (meshFilter.gameObject.name.StartsWith("Road"))
+        {
+            CombineInstance combineInstance = new CombineInstance();
+            combineInstance.mesh = meshFilter.sharedMesh;
+            combineInstance.transform = parentWorldToLocal * meshFilter.transform.localToWorldMatrix;
+            combine.Add(combineInstance);
+
+            MeshRenderer meshRenderer = meshFilter.GetComponent<MeshRenderer>();
+            if (meshRenderer != null)
+            {
+                materials.Add(meshRenderer.sharedMaterial);
+            }
+        }
+    }
+
+    Mesh combinedRoadMesh = new Mesh();
+    try
+    {
+        combinedRoadMesh.CombineMeshes(combine.ToArray(), false, true); // keep submeshes
+        Debug.Log("Combined road meshes successfully.");
+    }
+    catch (Exception e)
+    {
+        Debug.LogError("Error combining road meshes: " + e.Message);
+        return;
+    }
+
+    // Find crossroad mesh
+    Transform crossroadObject = null;
+    foreach (Transform child in transform)
+    {
+        if (child.name == "Crossroad")
+        {
+            crossroadObject = child;
+            break;
+        }
+    }
+
+    if (crossroadObject == null)
+    {
+        Debug.LogError("No Crossroad object found.");
+        return;
+    }
+
+    MeshFilter crossroadMeshFilter = crossroadObject.GetComponent<MeshFilter>();
+    MeshRenderer crossroadRenderer = crossroadObject.GetComponent<MeshRenderer>();
+
+    if (crossroadMeshFilter == null || crossroadMeshFilter.sharedMesh == null)
+    {
+        Debug.LogError("Crossroad MeshFilter missing or empty.");
+        return;
+    }
+
+    // Add the crossroad mesh
+    CombineInstance[] combineAll = new CombineInstance[combine.Count + 1];
+    for (int i = 0; i < combine.Count; i++)
+    {
+        combineAll[i] = combine[i];
+    }
+
+    combineAll[combine.Count] = new CombineInstance
+    {
+        mesh = crossroadMeshFilter.sharedMesh,
+        transform = parentWorldToLocal * crossroadMeshFilter.transform.localToWorldMatrix
+    };
+
+    if (crossroadRenderer != null)
+    {
+        materials.Add(crossroadRenderer.sharedMaterial);
+    }
+
+    Mesh combinedMesh = new Mesh();
+    try
+    {
+        combinedMesh.CombineMeshes(combineAll, false, true); // keep submeshes/materials
+        Debug.Log("Combined road + crossroad mesh.");
+    }
+    catch (Exception e)
+    {
+        Debug.LogError("Final combine failed: " + e.Message);
+        return;
+    }
+
+    // Create the baked object
+    GameObject bakedObject = new GameObject("BakedCrossroad");
+    bakedObject.transform.position = transform.position;
+    bakedObject.transform.rotation = transform.rotation;
+    bakedObject.transform.localScale = transform.localScale;
+
+    MeshFilter bakedMeshFilter = bakedObject.AddComponent<MeshFilter>();
+    MeshRenderer bakedMeshRenderer = bakedObject.AddComponent<MeshRenderer>();
+
+    bakedMeshFilter.mesh = combinedMesh;
+    bakedMeshRenderer.sharedMaterials = materials.ToArray(); // support multiple materials
+
+    // Clean up
+    for (int j = transform.childCount - 1; j >= 0; j--)
+    {
+        DestroyImmediate(transform.GetChild(j).gameObject);
+    }
+
+    Debug.Log("BakeCrossroad finished.");
+}
+
+
 }

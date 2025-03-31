@@ -8,21 +8,23 @@ public class CrossroadPlacerEditor : Editor
 {
     CrossroadPlacer placer;
 
-    
-
     public override void OnInspectorGUI()
     {
         base.OnInspectorGUI();
-        
 
         EditorGUI.BeginChangeCheck();
-        if(GUILayout.Button("Generate Crossroad Mesh"))
+        if (GUILayout.Button("Generate Crossroad Mesh"))
         {
             Undo.RecordObject(placer, "Generate Crossroad Mesh");
             placer.UpdateCrossroad();
         }
-        
-        if(EditorGUI.EndChangeCheck())
+        if (GUILayout.Button("Bake Crossroad"))
+        {
+            Undo.RecordObject(placer, "Bake Crossroad");
+            placer.BakeCrossroad();
+        }
+
+        if (EditorGUI.EndChangeCheck())
         {
             SceneView.RepaintAll();
         }
