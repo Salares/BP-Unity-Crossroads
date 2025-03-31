@@ -1,23 +1,22 @@
 using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
 
+[RequireComponent(typeof(MeshFilter))]
+[RequireComponent(typeof(MeshRenderer))]
 [RequireComponent(typeof(CrossroadCreator))] 
 public class CrossroadPlacer : MonoBehaviour
 {
     [Header("Crossroad Mesh Options")]
-    [Range(0.05f, 3f)]public float roadWidth = 1f;
+    [Range(0.05f, 3f)] public float roadWidth = 1f;
     [Range(.005f, 0.5f)] public float spacing = 1f;
-
     [Range(1f, 1000f)] public float tiling = 1;
+    
+    public Material roadMaterial;
+    public Material crossroadMaterial;
 
     private List<Vector2> crossroadVerticesV2;
     private List<Vector2> guideVerticesV2;
-
-    public Material roadMaterial;
-    public Material crossroadMaterial;
 
     public void UpdateCrossroad()
     {
@@ -132,7 +131,6 @@ public class CrossroadPlacer : MonoBehaviour
 
         Mesh mesh = new Mesh();
 
-        // Set the vertices and triangles to the mesh
         mesh.vertices = vertices;
         mesh.triangles = triangles;
         mesh.uv = uvs;
@@ -140,33 +138,9 @@ public class CrossroadPlacer : MonoBehaviour
         return mesh;
     }
 
-    public Vector2[] NormalizeVector2Array(Vector2[] vectorArray)
-    {
-        for (int i = 0; i < vectorArray.Length; i++)
-        {
-            vectorArray[i] = vectorArray[i].normalized;
-        }
-
-        return vectorArray;
-    }
-
     private float AngleBetweenVectors(Vector3 a, Vector3 b)
     {
         return Mathf.Acos(Vector3.Dot(a.normalized, b.normalized)) * Mathf.Rad2Deg;
-    }
-
-    private Vector2[] CalculateUVs(Vector3[] vertices, Vector3 center)
-    {
-        Vector2[] uvs = new Vector2[vertices.Length];
-
-        for (int i = 0; i < vertices.Length; i++)
-        {
-            Vector3 vertexDirection = vertices[i] - center;
-            float angle = AngleBetweenVectors(vertexDirection, Vector3.right);
-            uvs[i] = new Vector2(angle / 360f, 0f);
-        }
-
-        return uvs;
     }
 
     public Vector3[] CalculateIntersectionSplines(Vector3[] points, float spacing, float resolution = 1)
