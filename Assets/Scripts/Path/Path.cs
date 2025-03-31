@@ -205,7 +205,7 @@ using UnityEngine;
             while(time <= 1)
             {
                 time += interval;
-                Vector2 pointOnCurve = Bezier.EvaluateCubic(pointsInSegment[0],pointsInSegment[1],pointsInSegment[2],pointsInSegment[3], time);
+                Vector2 pointOnCurve = Bezier.Evaluate(pointsInSegment[0],pointsInSegment[1],pointsInSegment[2],pointsInSegment[3],BezierType.Cubic, time);
                 
                 while(distanceSinceLastEvenPoint >= spacing)
                 {
@@ -247,7 +247,7 @@ using UnityEngine;
     {
         for (int i = 0; i < points.Count; i+= 3)
         {
-            AutoSetAnchorControlPoints(i);
+           AutoSetAnchorControlPoints(i);
         }
         AutoSetStartAndEndControls();
     }
