@@ -21,6 +21,12 @@ public class CrossroadPlacer : MonoBehaviour
     public void UpdateCrossroad()
     {
         Crossroad crossroad = GetComponent<CrossroadCreator>().crossroad;
+        if (crossroad == null)
+        {
+            Debug.LogWarning("CrossroadPlacer.UpdateCrossroad: Crossroad is null. Mesh generation skipped.");
+            return;
+        }
+
         List<Vector2[]> list = new List<Vector2[]>();
 
         crossroadVerticesV2 = new List<Vector2>();
@@ -35,22 +41,29 @@ public class CrossroadPlacer : MonoBehaviour
         foreach (Path path in crossroad)
         {
             Vector2[] points = path.CalculateEvenlySpacedPoints(spacing);
-            Debug.DrawLine(new Vector3(points[0].x, 0, points[0].y), new Vector3(points[1].x, 0, points[1].y), Color.blue, 10f);
+            if (points.Length >= 2)
+            {
+                Debug.DrawLine(new Vector3(points[0].x, 0, points[0].y), new Vector3(points[1].x, 0, points[1].y), Color.blue, 10f);
 
-            GameObject meshObject = new GameObject("Road " + i);
+                GameObject meshObject = new GameObject("Road " + i);
 
-            meshObject.transform.SetParent(this.transform);
+                meshObject.transform.SetParent(this.transform);
 
-            MeshFilter meshFilter = meshObject.AddComponent<MeshFilter>();
-            MeshRenderer meshRenderer = meshObject.AddComponent<MeshRenderer>();
+                MeshFilter meshFilter = meshObject.AddComponent<MeshFilter>();
+                MeshRenderer meshRenderer = meshObject.AddComponent<MeshRenderer>();
 
-            int textureRepeat = Mathf.RoundToInt(tiling * points.Length * spacing * 0.05f);
-            meshRenderer.sharedMaterial = roadMaterial;
-            meshRenderer.sharedMaterial.mainTextureScale = new Vector2(1, textureRepeat);
+                int textureRepeat = Mathf.RoundToInt(tiling * points.Length * spacing * 0.05f);
+                meshRenderer.sharedMaterial = roadMaterial;
+                meshRenderer.sharedMaterial.mainTextureScale = new Vector2(1, textureRepeat);
 
-            meshFilter.mesh = CreateRoadMesh(points, false);
+                meshFilter.mesh = CreateRoadMesh(points, false);
 
-            i += 1;
+                i += 1;
+            }
+            else
+            {
+                Debug.LogWarning("CrossroadPlacer.UpdateCrossroad: Not enough points to create road mesh for path " + i);
+            }
         }
 
         GameObject crossroadObject = new GameObject("Crossroad");
@@ -91,7 +104,7 @@ public class CrossroadPlacer : MonoBehaviour
 
             Vector3[] points = pointsList.ToArray();
             Vector3[] spline = CalculateIntersectionSplines(points, 0.1f);
-
+            
             splineList.Add(spline);
         }
 
@@ -107,6 +120,14 @@ public class CrossroadPlacer : MonoBehaviour
         }
 
         Vector3[] vertices = verticesList.ToArray();
+
+        // Safety check: need at least 3 vertices to form a mesh
+        if (vertices.Length < 3)
+        {
+            Debug.LogWarning("CrossroadPlacer.CreateCrossroadMesh: Not enough vertices to create crossroad mesh. Need at least 3, got " + vertices.Length);
+            return new Mesh();
+        }
+
         Vector2[] uvs = new Vector2[vertices.Length];
         int[] triangles = new int[(vertices.Length - 1) * 3];
 
@@ -209,22 +230,27 @@ public class CrossroadPlacer : MonoBehaviour
 
         for (int i = 0; i < points.Length; i++)
         {
+            // Transform the 2D point to world space using the intersection object's transform
+            Vector3 worldPoint = transform.TransformPoint(new Vector3(points[i].x, 0, points[i].y));
+
             Vector3 forward = Vector3.zero;
             if (i < points.Length - 1 || isClosed)
             {
-                forward += new Vector3(points[(i + 1) % points.Length].x, 0, points[(i + 1) % points.Length].y) - new Vector3(points[i].x, 0, points[i].y);
+                Vector3 nextWorldPoint = transform.TransformPoint(new Vector3(points[(i + 1) % points.Length].x, 0, points[(i + 1) % points.Length].y));
+                forward += nextWorldPoint - worldPoint;
             }
 
             if (i > 0 || isClosed)
             {
-                forward += new Vector3(points[i].x, 0, points[i].y) - new Vector3(points[(i - 1 + points.Length) % points.Length].x, 0, points[(i - 1 + points.Length) % points.Length].y);
+                Vector3 previousWorldPoint = transform.TransformPoint(new Vector3(points[(i - 1 + points.Length) % points.Length].x, 0, points[(i - 1 + points.Length) % points.Length].y));
+                forward += worldPoint - previousWorldPoint;
             }
             forward.Normalize();
 
             Vector3 left = new Vector3(-forward.z, 0, forward.x);
 
-            vertices[vertexIndex] = new Vector3(points[i].x, 0, points[i].y) + left * roadWidth * .5f;
-            vertices[vertexIndex + 1] = new Vector3(points[i].x, 0, points[i].y) - left * roadWidth * .5f;
+            vertices[vertexIndex] = worldPoint + left * roadWidth * .5f;
+            vertices[vertexIndex + 1] = worldPoint - left * roadWidth * .5f;
 
             float completionPercent = i / (float)(points.Length - 1);
             float v = 1 - Mathf.Abs(2 * completionPercent - 1);

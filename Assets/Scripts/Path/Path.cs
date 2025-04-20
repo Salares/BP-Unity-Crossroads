@@ -292,4 +292,13 @@ using UnityEngine;
             points[points.Count-2] = (points[points.Count-3] + points[points.Count-1]) * .5f;
         }
     }
+
+    public Vector2 GetDirectionAtEnd()
+    {
+        if (points.Count >= 2)
+        {
+            return (points[points.Count - 1] - points[points.Count - 2]).normalized;
+        }
+        return Vector2.zero; // Or handle error appropriately
+    }
 }

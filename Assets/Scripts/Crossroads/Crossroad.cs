@@ -21,6 +21,11 @@ using UnityEngine;
         get { return pathList[i]; }
     }
 
+    public int NumberOfPaths
+    {
+        get { return pathList.Count; }
+    }
+
     public IEnumerator<Path> GetEnumerator()
     {
         return pathList.GetEnumerator();

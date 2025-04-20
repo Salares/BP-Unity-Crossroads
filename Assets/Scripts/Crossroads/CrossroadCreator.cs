@@ -4,6 +4,7 @@ using UnityEngine;
 
 [RequireComponent(typeof(MeshFilter))]
 [RequireComponent(typeof(MeshRenderer))]
+[RequireComponent(typeof(CrossroadCreator))]
 public class CrossroadCreator : MonoBehaviour
 {
     [System.Serializable] public class SplineParameters
@@ -35,7 +36,9 @@ public class CrossroadCreator : MonoBehaviour
 
     public void CreateCrossroad()
     {
-        crossroad = new Crossroad(new Vector2(transform.position.x, transform.position.z), numberOfPaths, startPointOffset, endPointOffset, controlPointOffset);
+        // Use Vector2.zero as the center for creating the Crossroad object
+        // The paths will be generated relative to the local origin of the intersection object.
+        crossroad = new Crossroad(Vector2.zero, numberOfPaths, startPointOffset, endPointOffset, controlPointOffset);
 
     }
 
