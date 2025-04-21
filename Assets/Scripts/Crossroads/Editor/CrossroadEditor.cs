@@ -31,7 +31,20 @@ public class CrossroadEditor : Editor
 
     void OnSceneGUI()
     {
+        Input();
         Draw();
+    }
+
+    void Input()
+    {
+        Event guiEvent = Event.current;
+        Ray mouseRay = HandleUtility.GUIPointToWorldRay(guiEvent.mousePosition);
+        float drawPlaneHeight = 0; // Assuming the XZ plane is at y=0
+        float dstToDrawPlane = (drawPlaneHeight - mouseRay.origin.y) / mouseRay.direction.y;
+        Vector3 mousePos = mouseRay.GetPoint(dstToDrawPlane);
+
+
+        HandleUtility.AddDefaultControl(0);
     }
 
     private void Draw()
@@ -41,16 +54,16 @@ public class CrossroadEditor : Editor
             Handles.color = creator.splineParameters.handlesColor;
             for (int i = 0; i < path.NumSegments; i++)
             {
-                Vector2[] points = path.GetPointsInSegment(i);
-                Vector3[] points3D = ConvertToVector3(points);
+                Vector3[] points = path.GetPointsInSegment(i); // Expect Vector3[]
+                // ConvertToVector3(points); // No longer needed
 
                 if (creator.splineParameters.displayPoints)
                 {
-                    Handles.DrawLine(points3D[1], points3D[0]);
-                    Handles.DrawLine(points3D[3], points3D[2]);
+                    Handles.DrawLine(points[1], points[0]);
+                    Handles.DrawLine(points[3], points[2]);
                 }
 
-                Handles.DrawBezier(points3D[0], points3D[3], points3D[1], points3D[2],
+                Handles.DrawBezier(points[0], points[3], points[1], points[2],
                     creator.splineParameters.segmentColor, null, creator.splineParameters.splineWidth);
             }
 
@@ -70,12 +83,12 @@ public class CrossroadEditor : Editor
                         diameter = creator.splineParameters.controlPointDiameter;
                     }
 
-                    Vector3 point3D = new Vector3(path[i].x, 0, path[i].y);
-                    Vector3 newPos3D = Handles.FreeMoveHandle(point3D, Quaternion.identity, diameter, Vector3.zero, Handles.CylinderHandleCap);
-                    if (point3D != newPos3D)
+                    // Use path[i] directly as it's now Vector3
+                    Vector3 newPos = Handles.FreeMoveHandle(path[i], Quaternion.identity, diameter, Vector3.zero, Handles.SphereHandleCap); // Changed to SphereHandleCap
+                    if (path[i] != newPos)
                     {
                         Undo.RecordObject(creator, "Move point");
-                        path.MovePoint(i, new Vector2(newPos3D.x, newPos3D.z));
+                        path.MovePoint(i, newPos); // Pass Vector3 directly
                         placer?.UpdateCrossroad();
                     }
                 }
@@ -83,6 +96,8 @@ public class CrossroadEditor : Editor
         }
     }
 
+    // ConvertToVector3 is no longer needed
+    /*
     private Vector3[] ConvertToVector3(Vector2[] vertices)
     {
         Vector3[] vertices3D = new Vector3[vertices.Length];
@@ -94,6 +109,7 @@ public class CrossroadEditor : Editor
 
         return vertices3D;
     }
+    */
 
     void OnEnable()
     {
