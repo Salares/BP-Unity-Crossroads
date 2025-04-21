@@ -25,18 +25,18 @@ public class CrossroadCreator : MonoBehaviour
     [HideInInspector] public Crossroad crossroad;
 
     [Header("Crossroad Options")]
-    [Range(2, 16)]public int numberOfPaths = 2;
+    [Range(2, 16)]public int numberOfPaths = 4;
 
     [Header("Road positioning")]
-    [Range(0f, 2f)] public float startPointOffset = 0.2f;
-    [Range(2f, 10f)] public float endPointOffset = 1f;
-    [Range(0.05f, 1f)] public float controlPointOffset = 0.05f;
+    [Range(1f, 3f)] public float startPointOffset = 1f;
+    [Range(2f, 10f)] public float endPointOffset = 4f;
+    [Range(0.15f, 1f)] public float controlPointOffset = 0.25f;
 
 
     public void CreateCrossroad()
     {
-        crossroad = new Crossroad(new Vector2(transform.position.x, transform.position.z), numberOfPaths, startPointOffset, endPointOffset, controlPointOffset);
-
+        // Assuming Crossroad constructor can take Vector3
+        crossroad = new Crossroad(transform.position, numberOfPaths, startPointOffset, endPointOffset, controlPointOffset);
     }
 
     void Start()

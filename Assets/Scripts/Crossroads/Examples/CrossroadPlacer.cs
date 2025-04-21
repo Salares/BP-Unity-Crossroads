@@ -9,22 +9,29 @@ public class CrossroadPlacer : MonoBehaviour
 {
     [Header("Crossroad Mesh Options")]
     [Range(0.05f, 3f)] public float roadWidth = 1f;
-    [Range(.005f, 0.5f)] public float spacing = 1f;
-    [Range(1f, 1000f)] public float tiling = 1;
+    [Range(.005f, 0.5f)] public float spacing = 0.1f;
+    [Range(1f, 1000f)] public float tiling = 10;
 
     public Material roadMaterial;
     public Material crossroadMaterial;
 
-    private List<Vector2> crossroadVerticesV2;
-    private List<Vector2> guideVerticesV2;
+    private List<Vector3> crossroadVerticesV2;
+    private List<Vector3> guideVerticesV2;
 
     public void UpdateCrossroad()
     {
-        Crossroad crossroad = GetComponent<CrossroadCreator>().crossroad;
-        List<Vector2[]> list = new List<Vector2[]>();
+        CrossroadCreator crossroadCreator = GetComponent<CrossroadCreator>();
+        if (crossroadCreator == null)
+        {
+            Debug.LogError("CrossroadCreator component is missing on " + gameObject.name + ". Cannot update crossroad.");
+            return;
+        }
 
-        crossroadVerticesV2 = new List<Vector2>();
-        guideVerticesV2 = new List<Vector2>();
+        Crossroad crossroad = crossroadCreator.crossroad;
+        List<Vector3[]> list = new List<Vector3[]>();
+
+        crossroadVerticesV2 = new List<Vector3>();
+        guideVerticesV2 = new List<Vector3>();
 
         for (int j = transform.childCount - 1; j >= 0; j--)
         {
@@ -34,24 +41,34 @@ public class CrossroadPlacer : MonoBehaviour
         int i = 0;
         foreach (Path path in crossroad)
         {
-            Vector2[] points = path.CalculateEvenlySpacedPoints(spacing);
-            Debug.DrawLine(new Vector3(points[0].x, 0, points[0].y), new Vector3(points[1].x, 0, points[1].y), Color.blue, 10f);
+            Vector3[] points = path.CalculateEvenlySpacedPoints(spacing);
+            Debug.DrawLine(points[0], points[1], Color.blue, 10f); // Directly use Vector3 points
 
             GameObject meshObject = new GameObject("Road " + i);
 
             meshObject.transform.SetParent(this.transform);
 
             MeshFilter meshFilter = meshObject.AddComponent<MeshFilter>();
-            MeshRenderer meshRenderer = meshObject.AddComponent<MeshRenderer>();
+MeshRenderer meshRenderer = meshObject.AddComponent<MeshRenderer>();
 
             int textureRepeat = Mathf.RoundToInt(tiling * points.Length * spacing * 0.05f);
-            meshRenderer.sharedMaterial = roadMaterial;
-            meshRenderer.sharedMaterial.mainTextureScale = new Vector2(1, textureRepeat);
+            if (roadMaterial != null)
+            {
+                meshRenderer.sharedMaterial = roadMaterial;
+                meshRenderer.sharedMaterial.mainTextureScale = new Vector2(1, textureRepeat);
+            }
+            else
+            {
+                Debug.LogWarning("Road Material is not assigned in the inspector for " + gameObject.name);
+            }
 
-            meshFilter.mesh = CreateRoadMesh(points, false);
+            meshFilter.mesh = CreateRoadMesh(points, false); // Pass Vector3[]
 
             i += 1;
         }
+
+        Debug.Log("crossroadVerticesV2 count: " + crossroadVerticesV2.Count);
+        Debug.Log("guideVerticesV2 count: " + guideVerticesV2.Count);
 
         GameObject crossroadObject = new GameObject("Crossroad");
         crossroadObject.transform.SetParent(this.transform);
@@ -63,8 +80,17 @@ public class CrossroadPlacer : MonoBehaviour
 
     private Mesh CreateCrossroadMesh()
     {
-        Vector3[] verticesNoCenter = ConvertToVector3(crossroadVerticesV2.ToArray());
-        Vector3[] guideVertices = ConvertToVector3(guideVerticesV2.ToArray());
+        Vector3[] verticesNoCenter = crossroadVerticesV2.ToArray(); // No need for ConvertToVector3
+        Vector3[] guideVertices = guideVerticesV2.ToArray(); // No need for ConvertToVector3
+
+        Debug.Log("verticesNoCenter length: " + verticesNoCenter.Length);
+        Debug.Log("guideVertices length: " + guideVertices.Length);
+
+        if (verticesNoCenter.Length == 0 || verticesNoCenter.Length % 2 != 0)
+        {
+            Debug.LogError("Crossroad vertices are not valid. Cannot create crossroad mesh.");
+            return new Mesh(); // Return an empty mesh to prevent crash
+        }
 
         Vector3 center = this.transform.position;
 
@@ -112,7 +138,14 @@ public class CrossroadPlacer : MonoBehaviour
 
         for (int i = 0; i < vertices.Length; i++)
         {
-            Vector2 coordinate = new Vector2(Vector3.Distance(vertices[i], center), AngleBetweenVectors(vertices[i], Vector3.forward) / 360f);
+            // Assuming UV mapping is based on distance from center and angle in XZ plane
+            Vector3 flatVertex = new Vector3(vertices[i].x, 0, vertices[i].z);
+            Vector3 flatCenter = new Vector3(center.x, 0, center.z);
+            Vector3 direction = (flatVertex - flatCenter).normalized;
+            float angle = Vector3.SignedAngle(Vector3.forward, direction, Vector3.up);
+            if (angle < 0) angle += 360;
+
+            Vector2 coordinate = new Vector2(Vector3.Distance(flatVertex, flatCenter), angle / 360f);
             uvs[i] = coordinate;
         }
         int triangleIndex = 0;
@@ -184,6 +217,8 @@ public class CrossroadPlacer : MonoBehaviour
     }
 
 
+    // ConvertToVector3 is no longer needed as points are already Vector3
+    /*
     public Vector3[] ConvertToVector3(Vector2[] vertices)
     {
         Vector3[] vertices3D = new Vector3[vertices.Length];
@@ -195,8 +230,9 @@ public class CrossroadPlacer : MonoBehaviour
 
         return vertices3D;
     }
+    */
 
-    Mesh CreateRoadMesh(Vector2[] points, bool isClosed)
+    Mesh CreateRoadMesh(Vector3[] points, bool isClosed) // Accept Vector3[]
     {
         int numberOfTriangles = 2 * (points.Length - 1) + ((isClosed) ? 2 : 0);
 
@@ -212,19 +248,19 @@ public class CrossroadPlacer : MonoBehaviour
             Vector3 forward = Vector3.zero;
             if (i < points.Length - 1 || isClosed)
             {
-                forward += new Vector3(points[(i + 1) % points.Length].x, 0, points[(i + 1) % points.Length].y) - new Vector3(points[i].x, 0, points[i].y);
+                forward += points[(i + 1) % points.Length] - points[i]; // Use Vector3
             }
 
             if (i > 0 || isClosed)
             {
-                forward += new Vector3(points[i].x, 0, points[i].y) - new Vector3(points[(i - 1 + points.Length) % points.Length].x, 0, points[(i - 1 + points.Length) % points.Length].y);
+                forward += points[i] - points[(i - 1 + points.Length) % points.Length]; // Use Vector3
             }
             forward.Normalize();
 
-            Vector3 left = new Vector3(-forward.z, 0, forward.x);
+            Vector3 left = new Vector3(-forward.z, 0, forward.x); // Calculate left for XZ plane
 
-            vertices[vertexIndex] = new Vector3(points[i].x, 0, points[i].y) + left * roadWidth * .5f;
-            vertices[vertexIndex + 1] = new Vector3(points[i].x, 0, points[i].y) - left * roadWidth * .5f;
+            vertices[vertexIndex] = points[i] + left * roadWidth * .5f; // Use Vector3
+            vertices[vertexIndex + 1] = points[i] - left * roadWidth * .5f; // Use Vector3
 
             float completionPercent = i / (float)(points.Length - 1);
             float v = 1 - Mathf.Abs(2 * completionPercent - 1);
@@ -247,10 +283,10 @@ public class CrossroadPlacer : MonoBehaviour
         }
         Mesh mesh = new Mesh();
 
-        crossroadVerticesV2.Add(new Vector2(vertices[1].x, vertices[1].z));
-        crossroadVerticesV2.Add(new Vector2(vertices[0].x, vertices[0].z));
-        guideVerticesV2.Add(new Vector2(vertices[3].x, vertices[3].z));
-        guideVerticesV2.Add(new Vector2(vertices[2].x, vertices[2].z));
+        crossroadVerticesV2.Add(vertices[1]); // Add Vector3 directly
+        crossroadVerticesV2.Add(vertices[0]); // Add Vector3 directly
+        guideVerticesV2.Add(vertices[3]); // Add Vector3 directly
+        guideVerticesV2.Add(vertices[2]); // Add Vector3 directly
 
         mesh.vertices = vertices;
         mesh.uv = uvs;
@@ -264,8 +300,8 @@ public class CrossroadPlacer : MonoBehaviour
     Debug.Log("BakeCrossroad called");
 
     // Must initialize BEFORE calling UpdateCrossroad to avoid clearing important data
-    crossroadVerticesV2 = new List<Vector2>();
-    guideVerticesV2 = new List<Vector2>();
+    crossroadVerticesV2 = new List<Vector3>(); // Changed to Vector3
+    guideVerticesV2 = new List<Vector3>(); // Changed to Vector3
 
     UpdateCrossroad(); // Regenerate procedural mesh
 
